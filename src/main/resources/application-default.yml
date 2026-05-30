@@ -1,0 +1,16 @@
+spring:
+  data:
+    redis:
+      host: localhost
+      port: 6380
+
+game.engine:
+  databaseConfiguration:
+    driverClassName: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3307/game
+    userName: root
+    password: password
+    connectionTimeOut: 50000
+    maxLifeTime: 1800000
+    maxPoolSize: 5
+    poolName: product-db
