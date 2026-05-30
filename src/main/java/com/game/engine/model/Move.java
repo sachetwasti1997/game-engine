@@ -7,7 +7,7 @@ import lombok.Setter;
 @Setter
 public class Move {
 
-    private String players;
+    private String player;
     private int x;
     private int y;
 

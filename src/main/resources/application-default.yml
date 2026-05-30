@@ -3,6 +3,9 @@ spring:
     redis:
       host: localhost
       port: 6380
+    mongodb:
+      uri: mongodb://admin:secretpassword@localhost:27017
+
 
 game.engine:
   databaseConfiguration:
