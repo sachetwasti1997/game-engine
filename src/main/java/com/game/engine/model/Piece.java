@@ -5,11 +5,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class Move {
-
-    private Player player;
-    int x;
-    int y;
-    private Cell cell;
-
+public class Piece {
+  private String id;
+  private String pieceName;
 }

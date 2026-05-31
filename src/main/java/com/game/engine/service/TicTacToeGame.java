@@ -1,6 +1,7 @@
 package com.game.engine.service;
 
 import com.game.engine.model.GameResult;
+import com.game.engine.model.GameStatus;
 import com.game.engine.model.Move;
 import com.game.engine.model.TicTacToeBoard;
 //import com.game.engine.repo.BoardRepository;
@@ -10,8 +11,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
 
 @Service
 public class TicTacToeGame {
@@ -24,8 +23,7 @@ public class TicTacToeGame {
     }
 
     public String startGame(int rows, int cols) {
-        Set<String> players = Set.of("X", "O");
-        TicTacToeBoard board = boardRepository.save(new TicTacToeBoard(rows, cols, players));
+        TicTacToeBoard board = boardRepository.save(new TicTacToeBoard(rows, cols));
         return board.getGameUUID();
     }
 
@@ -36,12 +34,18 @@ public class TicTacToeGame {
             return null;
         }
         TicTacToeBoard ticTacToeBoard = board.get();
-        if (ticTacToeBoard.getCell(move.getX(), move.getY()) != null) {
+        if (ticTacToeBoard.getGameStatus().equals(GameStatus.COMPLETED)) {
+            return new GameResult(true, "NA", new String[]{"Game Already Complete"});
+        }
+        if (ticTacToeBoard.getBoard(move.getX(), move.getY()) != null
+        || move.getPlayer().getPlayerSymbol().equals(ticTacToeBoard.getLastPlayerSymbol())) {
             return new GameResult(false, "NA", new String[]{"Move already made"});
         }
-        ticTacToeBoard.setCell(move.getX(), move.getY(), move.getPlayer());
+        ticTacToeBoard.setBoard(move.getX(), move.getY(), move.getCell().getPiece().getPieceName());
+        ticTacToeBoard.setLastPlayerSymbol(move.getPlayer().getPlayerSymbol());
+        GameResult result = getGameStatus(board.get());
         boardRepository.save(ticTacToeBoard);
-        return getGameStatus(board.get());
+        return result;
     }
 
     public GameResult getGameStatus(TicTacToeBoard board) {
@@ -53,10 +57,12 @@ public class TicTacToeGame {
 
         result = rowColWon(x, y, board);
         if (result.isGameOver()) {
+            board.setGameStatus(GameStatus.COMPLETED);
             return result;
         }
         result = determineDiagWon(x, y, board);
         if (result.isGameOver()) {
+            board.setGameStatus(GameStatus.COMPLETED);
             return result;
         }
 
@@ -72,17 +78,17 @@ public class TicTacToeGame {
         // determine diagonal win
         i = 0;
         j = 0;
-        String firstCharacter = board.getCell(i, j);
+        String firstCharacter = board.getBoard(i, j);
         if (firstCharacter == null) diagFilled = false;
-        String revFirstCharacter = board.getCell(x -1, 0);
+        String revFirstCharacter = board.getBoard(x -1, 0);
         if (revFirstCharacter == null) revDigFilled = false;
         i++;
         j++;
         while (i < x && j < y) {
-            if (diagFilled &&!firstCharacter.equals(board.getCell(i, j))) {
+            if (diagFilled &&!firstCharacter.equals(board.getBoard(i, j))) {
                 diagFilled = false;
             }
-            if (revDigFilled && !revFirstCharacter.equals(board.getCell(x -1-i, j))) {
+            if (revDigFilled && !revFirstCharacter.equals(board.getBoard(x -1-i, j))) {
                 revDigFilled = false;
             }
             if (!revDigFilled && !diagFilled) {
@@ -109,10 +115,10 @@ public class TicTacToeGame {
         // determine if row/col won
         for (i=0; i<x; i++) {
             colFilled = true;
-            String firstCharacter = board.getCell(i, 0);
+            String firstCharacter = board.getBoard(i, 0);
             if (firstCharacter != null) {
                 for (j = 1; j < y; j++) {
-                    if (!firstCharacter.equals(board.getCell(i, j))) {
+                    if (!firstCharacter.equals(board.getBoard(i, j))) {
                         colFilled = false;
                         break;
                     }
@@ -123,10 +129,10 @@ public class TicTacToeGame {
             }
 
             rowsFilled = true;
-            String firstCharacterCol = board.getCell(0, i);
+            String firstCharacterCol = board.getBoard(0, i);
             if (firstCharacterCol != null) {
                 for (j = 1; j < x; i++) {
-                    if (!firstCharacterCol.equals(board.getCell(j, i))) {
+                    if (!firstCharacterCol.equals(board.getBoard(j, i))) {
                         rowsFilled = false;
                         break;
                     }
@@ -144,12 +150,13 @@ public class TicTacToeGame {
         int count = 0;
         for (int i=0; i< board.getRows(); i++) {
             for (int j=0; j< board.getCols(); j++) {
-                if (board.getCell(i, j) != null) {
+                if (board.getBoard(i, j) != null) {
                     count ++;
                 }
             }
         }
         if(count == board.getRows() * board.getCols()) {
+            board.setGameStatus(GameStatus.COMPLETED);
             return new GameResult(true, "NA", null);
         }
         return getNoWinNoGameOver();
